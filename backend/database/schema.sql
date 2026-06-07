@@ -16,7 +16,7 @@ CREATE TABLE conteudo(
     api_fonte VARCHAR(255) NOT NULL,
     tipo ENUM("Anime", "Filme", "Série") NOT NULL,
 	data_adicao DATETIME NOT NULL,
-    UNIQUE (id_externo, api_fonte) # não permite 2 id externo da mesma api
+    UNIQUE (id_externo, api_fonte) # não permite ser inserido mais de uma vez um id externo da mesma api
 );
 
 CREATE TABLE avaliacao(
