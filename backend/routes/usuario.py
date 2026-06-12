@@ -1,4 +1,5 @@
-from fastapi import APIRouter, HTTPException, status
+from typing import Annotated
+from fastapi import APIRouter, HTTPException, status, Depends
 from sqlmodel import select
 
 from database import SessionDep
@@ -9,16 +10,16 @@ from schemas.usuario import (
     UsuarioRead,
     UsuarioUpdate
 )
+from services.usuario_service import UsuarioService
+from services.implementations.usuario_service_implementation import UsuarioServiceImpl
 
 usuario_router = APIRouter(prefix="/usuarios", tags=["usuarios"])
 
-@usuario_router.get("", response_model=list[UsuarioRead])
-def listar_usuarios(session: SessionDep):
-    usuarios: list[Usuario] = session.scalars(
-        select(Usuario)
-    ).all()
+usuario_service = Annotated[UsuarioService, Depends(UsuarioServiceImpl)]
 
-    return usuarios
+@usuario_router.get("", response_model=list[UsuarioRead])
+def listar_usuarios(usuario_service: usuario_service):
+    return usuario_service.list_usuario()
 
 @usuario_router.get("/{id}", response_model=UsuarioRead)
 def buscar_usuario(id: int, session: SessionDep):
