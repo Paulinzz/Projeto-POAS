@@ -24,6 +24,9 @@ class UsuarioServiceImpl(UsuarioService):
         self.session = session
 
     def create_usuario(self, usuario_data: UsuarioCreate) -> Usuario:
+        if self.get_usuario_by_email(usuario_data.email):
+            raise ConflictException("Já existe um usuário cadastrado com esse email")
+
         usuario = Usuario(
             nome = usuario_data.nome,
             email = usuario_data.email,
@@ -57,7 +60,7 @@ class UsuarioServiceImpl(UsuarioService):
         usuario = self.get_usuario(id)
 
         if self.get_usuario_by_email(usuario_data.email):
-            raise ConflictException("Já existe um usuário com esse email")
+            raise ConflictException("Já existe um usuário cadastrado com esse email")
 
         if usuario_data.nome:
             usuario.nome = usuario_data.nome
