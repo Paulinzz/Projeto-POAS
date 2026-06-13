@@ -35,7 +35,7 @@ def not_found_handler(request: Request, exc: NotFoundException):
 @app.exception_handler(ConflictException)
 def conflict_handler(request: Request, exc: ConflictException):
     return JSONResponse(
-        status_code = status.HTTP_404_NOT_FOUND,
+        status_code = status.HTTP_409_CONFLICT,
         content = {"detail": exc.message}
     )
 
