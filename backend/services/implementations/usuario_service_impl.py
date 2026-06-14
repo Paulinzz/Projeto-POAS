@@ -51,7 +51,7 @@ def salvar_imagem(imagem: UploadFile) -> str:
     except Exception:
         raise 
 
-    return caminho_arquivo
+    return str(caminho_arquivo)
 
 class UsuarioServiceImpl(UsuarioService):
     def __init__(self, session: SessionDep):
@@ -115,18 +115,20 @@ class UsuarioServiceImpl(UsuarioService):
     def update_foto_perfil(self, id:int, foto_perfil: UploadFile):
         usuario = self.get_usuario(id)
 
-        caminho_imagem = salvar_imagem(foto_perfil)
-        if usuario.foto_perfil_url and os.path.exists(usuario.foto_perfil_url):
-            os.remove(usuario.foto_perfil_url)
-            
-        usuario.foto_perfil_url = caminho_imagem
+        caminho_foto_antiga = usuario.foto_perfil_url
+        caminho_foto_nova = salvar_imagem(foto_perfil)
+
+        usuario.foto_perfil_url = caminho_foto_nova
 
         try:
             self.session.commit()
             self.session.refresh(usuario)
+
+            if caminho_foto_antiga and os.path.exists(caminho_foto_antiga):
+                os.remove(caminho_foto_antiga)                
         except Exception:
             self.session.rollback()
-            os.remove(caminho_imagem)
+            os.remove(caminho_foto_nova)
 
             raise
 
