@@ -18,7 +18,7 @@ class Usuario(Base):
     nome: Mapped[str] = mapped_column(String(50), nullable=False)
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
     senha_hash: Mapped[str] = mapped_column(String(255), nullable=False)
-    foto_perfil_url: Mapped[Optional[str]] = mapped_column(String(255))
+    foto_perfil_path: Mapped[Optional[str]] = mapped_column(String(255))
     data_criacao: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         insert_default=get_now_datetime_utc,
