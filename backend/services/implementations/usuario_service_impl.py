@@ -111,7 +111,7 @@ class UsuarioServiceImpl(UsuarioService):
             
             raise
 
-    def update_foto_perfil(self, id:int, foto_perfil: UploadFile):
+    def update_foto_perfil(self, id:int, foto_perfil: UploadFile) -> Usuario:
         usuario = self.get_usuario(id)
 
         caminho_foto_antiga = usuario.foto_perfil_url
@@ -124,7 +124,9 @@ class UsuarioServiceImpl(UsuarioService):
             self.session.refresh(usuario)
 
             if caminho_foto_antiga and os.path.exists(caminho_foto_antiga):
-                os.remove(caminho_foto_antiga)                
+                os.remove(caminho_foto_antiga)      
+
+            return usuario
         except Exception:
             self.session.rollback()
             os.remove(caminho_foto_nova)

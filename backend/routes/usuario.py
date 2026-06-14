@@ -35,6 +35,6 @@ def atualizar_usuario(id: int, usuario_form: UsuarioUpdate, usuario_service: Usu
 def deletar_usuario(id: int, usuario_service: UsuarioServiceDep):
     usuario_service.delete_usuario(id)
 
-@usuario_router.patch("/{id}/foto-perfil")
+@usuario_router.patch("/{id}/foto-perfil", response_model=UsuarioRead)
 def atualizar_foto_perfil(id: int, foto_perfil: UploadFile, usuario_service: UsuarioServiceDep):
-    usuario_service.update_foto_perfil(id, foto_perfil)
+    return usuario_service.update_foto_perfil(id, foto_perfil)

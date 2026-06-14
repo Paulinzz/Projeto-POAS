@@ -19,7 +19,7 @@ class UsuarioService(ABC):
         pass
 
     @abstractmethod
-    def update_foto_perfil(self, id, foto_perfil: UploadFile):
+    def update_foto_perfil(self, id, foto_perfil: UploadFile) -> Usuario:
         pass
 
     @abstractmethod
