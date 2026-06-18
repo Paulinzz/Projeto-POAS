@@ -1,13 +1,12 @@
 from pydantic import ( 
-    Field, 
     BaseModel
 )
 from datetime import datetime
 
 
 class FavoritoCreate(BaseModel):
-    conteudo_id: int = Field(ge=1)
-    usuario_id: int = Field(ge=1)
+    conteudo_id: int
+    usuario_id: int
 
 class FavoritoRead(BaseModel):
     id: int
@@ -16,5 +15,4 @@ class FavoritoRead(BaseModel):
     data_adicao: datetime
 
 # class FavoritoUpdate(BaseModel):
-    # conteudo_id: Optional[int] = Field(ge=1)
-    # usuario_id: Optional[int] = Field(ge=1)
+    # pass

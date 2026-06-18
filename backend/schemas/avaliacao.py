@@ -8,8 +8,8 @@ from decimal import Decimal
 
 
 class AvaliacaoCreate(BaseModel):
-    conteudo_id: int = Field(ge=1)
-    usuario_id: int = Field(ge=1)
+    conteudo_id: int
+    usuario_id: int
     estrelas: Decimal = Field(ge=1, le=5, multiple_of=0.5, decimal_places=1) # >= 1 e <= 5, step de 0.5
     comentario: Optional[str] = None
 
