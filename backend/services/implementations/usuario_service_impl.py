@@ -17,6 +17,7 @@ from exceptions import (
     UnsupportedMediaTypeException
 )
 
+
 password_hash = PasswordHash.recommended()
 
 def get_password_hash(password):
@@ -52,6 +53,14 @@ def salvar_imagem(imagem: UploadFile) -> str:
 
     return str(caminho_arquivo)
 
+def deletar_imagem(path: str):
+    if path and os.path.exists(path):
+        try:
+            os.remove(path)
+        except Exception as e:
+            print(f"Erro ao deletar imagem {path}: {e}")
+
+
 class UsuarioServiceImpl(UsuarioService):
     def __init__(self, session: SessionDep):
         self.session = session
@@ -79,10 +88,12 @@ class UsuarioServiceImpl(UsuarioService):
 
     def delete_usuario(self, id: int):
         usuario = self.get_usuario(id)
+        caminho_foto = usuario.foto_perfil_path
 
         try:
             self.session.delete(usuario)
             self.session.commit()
+            deletar_imagem(caminho_foto)
         except Exception:
             self.session.rollback()
 
@@ -124,19 +135,11 @@ class UsuarioServiceImpl(UsuarioService):
             self.session.refresh(usuario)
         except Exception:
             self.session.rollback()
-            try:
-                os.remove(caminho_foto_nova)
-            except Exception as e:
-                print(f"Erro ao deletar foto de perfil nova {caminho_foto_antiga}: {e}")
+            deletar_imagem(caminho_foto_nova)
 
             raise
-
-        if caminho_foto_antiga:
-            if os.path.exists(caminho_foto_antiga):
-                try:
-                    os.remove(caminho_foto_antiga)
-                except Exception as e:
-                    print(f"Erro ao deletar foto de perfil antiga {caminho_foto_antiga}: {e}")
+        deletar_imagem(caminho_foto_antiga)
+        
         return usuario     
 
     def list_usuario(self) -> list[Usuario]:
