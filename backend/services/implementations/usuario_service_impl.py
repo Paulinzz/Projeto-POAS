@@ -114,10 +114,10 @@ class UsuarioServiceImpl(UsuarioService):
     def update_foto_perfil(self, id:int, foto_perfil: UploadFile) -> Usuario:
         usuario = self.get_usuario(id)
 
-        caminho_foto_antiga = usuario.foto_perfil_url
+        caminho_foto_antiga = usuario.foto_perfil_path
         caminho_foto_nova = salvar_imagem(foto_perfil)
 
-        usuario.foto_perfil_url = caminho_foto_nova
+        usuario.foto_perfil_path = caminho_foto_nova
 
         try:
             self.session.commit()
