@@ -1,23 +1,25 @@
-from services.schemas.filme import FilmeListRead, FilmeRead, ImagensFilme
+from utils import str_to_date
+from schemas.filme import FilmeListRead, FilmeRead
+from schemas.conteudo import ImagensConteudo
 from constants import TMDB_IMAGE_STORAGE
 
-class FilmeMapper:
+from .tmdb import TmdbMapper
+
+class FilmeMapper(TmdbMapper):
     @staticmethod
-    def _map_image(path: str | None, size: str) -> str | None:
-        if not path:
-            return None
+    def map_status(status: str | None):
+        STATUS_MAP = {
+            "Rumored": "Em rumores",
+            "Planned": "Planejado",
+            "In Production": "Em produção",
+            "Post Production": "Em pós-produção",
+            "Released": "Lançado",
+            "Canceled": "Cancelado",
+        }
+        if status not in STATUS_MAP.keys():
+            print(f"Status desconhecido recebido do TMDB: {status}")
 
-        return f"{TMDB_IMAGE_STORAGE}/{size}{path}"
-
-    @staticmethod
-    def _map_genres(item: dict) -> list[dict]:
-        genres: list[dict] = item.get("genres", [])
-
-        return [
-            {"id": int(genre["id"]), "nome": genre["name"]}
-            for genre in genres
-            if genre.get("id") is not None and genre.get("name")
-        ]
+        return STATUS_MAP.get(status, "Desconhecido")
 
     @staticmethod
     def map_filme(item: dict) -> FilmeRead:
@@ -27,14 +29,14 @@ class FilmeMapper:
             titulo_original=item.get("original_title") or "",
             idioma_original=item.get("original_language") or "",
             descricao=item.get("overview"),
-            status=item.get("status") or "",
-            data_lancamento=item.get("release_date") or None,
+            status=FilmeMapper.map_status(item.get("status")),
+            data_lancamento=str_to_date(item.get("release_date")) ,
             duracao_minutos=item.get("runtime") or 0,
-            imagens=ImagensFilme(
-                capa=FilmeMapper._map_image(item.get("poster_path"), "w500"),
-                banner=FilmeMapper._map_image(item.get("backdrop_path"), "original"),
+            imagens=ImagensConteudo(
+                capa=FilmeMapper.map_image(item.get("poster_path"), "w500"),
+                banner=FilmeMapper.map_image(item.get("backdrop_path"), "original"),
             ),
-            generos=FilmeMapper._map_genres(item),
+            generos=FilmeMapper.map_genres(item),
         )
 
     @staticmethod
@@ -46,13 +48,14 @@ class FilmeMapper:
                 titulo_original=item.get("original_title") or "",
                 idioma_original=item.get("original_language") or "",
                 descricao=item.get("overview"),
-                status=item.get("status") or "",
-                data_lancamento=item.get("release_date") or None,
-                imagens=ImagensFilme(
-                    capa=FilmeMapper._map_image(item.get("poster_path"), "w500"),
-                    banner=FilmeMapper._map_image(item.get("backdrop_path"), "original"),
+                # status=FilmeMapper.map_status(item.get("status")),
+                data_lancamento=str_to_date(item.get("release_date")),
+                imagens=ImagensConteudo(
+                    capa=FilmeMapper.map_image(item.get("poster_path"), "w500"),
+                    banner=FilmeMapper.map_image(item.get("backdrop_path"), "original"),
                 ),
                 generos_ids=[int(genre_id) for genre_id in item.get("genre_ids", [])],
             )
             for item in items
         ]
+

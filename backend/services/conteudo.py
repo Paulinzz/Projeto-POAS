@@ -2,8 +2,8 @@ from typing import Annotated
 
 from fastapi import Depends
 
-from exceptions import NotFoundException
-from models import Conteudo
+from exceptions import EntityNotFoundException
+from models.conteudo import ApiFonte, Conteudo, TipoConteudo
 from repositories import ConteudoRepositoryDep
 
 
@@ -14,12 +14,16 @@ class ConteudoService:
     def get_conteudo(self, id: int) -> Conteudo:
         conteudo = self.conteudo_repository.get_conteudo(id)
         if not conteudo:
-            raise NotFoundException("Conteúdo", id)
+            raise EntityNotFoundException("Conteúdo", id)
 
         return conteudo
 
-    def get_conteudo_by_id_externo(self, id_externo: int, api_fonte: str) -> Conteudo | None:
-        return self.conteudo_repository.get_conteudo_by_id_externo(id_externo, api_fonte)
+    def get_or_create_conteudo(self, id_externo: int, api_fonte: ApiFonte, tipo: TipoConteudo) -> Conteudo:
+        return self.conteudo_repository.get_or_create_conteudo(
+            id_externo=id_externo,
+            api_fonte=api_fonte,
+            tipo=tipo
+        )
 
 
 ConteudoServiceDep = Annotated[ConteudoService, Depends(ConteudoService)]

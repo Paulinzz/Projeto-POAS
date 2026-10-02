@@ -1,11 +1,12 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, status
 
-from utils import get_data
-from constants import TMDB_API_URL, HEADERS_TMDB, PARAMS_TMDB
-from services.schemas.pagination.tmdb import TmdbPage, TmdbPagination, TmdbPaginationParams
-from services.schemas.filme import FilmeListRead, FilmeRead
-from mappers.filme import FilmeMapper
-from exceptions import NotFoundException
+from auth.dependencies import CurrentUsuarioDep
+from schemas.pagination.tmdb import TmdbPage, TmdbPagination, TmdbPaginationParams
+from schemas.filme import FilmeListRead, FilmeRead
+from schemas.favorito import FilmeFavoritoRead
+from schemas.assistido import FilmeAssistidoRead
+from services import AssistidoServiceDep, FilmeServiceDep
+from services.favorito import FavoritoServiceDep
 
 filmes_router = APIRouter(prefix="/filmes", tags=["filmes"])
 
@@ -13,22 +14,13 @@ filmes_router = APIRouter(prefix="/filmes", tags=["filmes"])
 @filmes_router.get("", response_model=TmdbPage[FilmeListRead])
 def buscar_filmes(
     busca: str,
+    filme_service: FilmeServiceDep,
     paginacao: TmdbPaginationParams = Depends()
 ):
-    url = TMDB_API_URL + "/search/movie"
-
-    params = PARAMS_TMDB.copy()
-    params["query"] = busca
-    params["page"] = paginacao.page
-
-
-    data = get_data(url, params, HEADERS_TMDB)
-
-    items = data.get("results", [])
-    filmes = FilmeMapper.map_filmes(items)
-
-    total_pages = data.get("total_pages", 0)
-    total_results = data.get("total_results", 0)
+    filmes, total_pages, total_results = filme_service.search_filmes(
+        busca=busca,
+        page=paginacao.page,
+    )
 
     return TmdbPage(
         data=filmes,
@@ -42,19 +34,13 @@ def buscar_filmes(
 
 
 @filmes_router.get("/em-alta", response_model=TmdbPage[FilmeListRead])
-def listar_filmes_em_alta(paginacao: TmdbPaginationParams = Depends()):
-    url = TMDB_API_URL + "/trending/movie/week"
-
-    params = PARAMS_TMDB.copy()
-    params["page"] = paginacao.page
-
-    data = get_data(url, params, HEADERS_TMDB)
-
-    items = data.get("results", [])
-    filmes = FilmeMapper.map_filmes(items)
-
-    total_pages = data.get("total_pages", 0)
-    total_results = data.get("total_results", 0)
+def listar_filmes_em_alta(
+    filme_service: FilmeServiceDep,
+    paginacao: TmdbPaginationParams = Depends(),
+):
+    filmes, total_pages, total_results = filme_service.list_filmes_em_alta(
+        page=paginacao.page,
+    )
 
     return TmdbPage(
         data=filmes,
@@ -68,19 +54,13 @@ def listar_filmes_em_alta(paginacao: TmdbPaginationParams = Depends()):
 
 
 @filmes_router.get("/populares", response_model=TmdbPage[FilmeListRead])
-def listar_filmes_populares(paginacao: TmdbPaginationParams = Depends()):
-    url = TMDB_API_URL + "/movie/popular"
-
-    params = PARAMS_TMDB.copy()
-    params["page"] = paginacao.page
-
-    data = get_data(url, params, HEADERS_TMDB)
-
-    items = data.get("results", [])
-    filmes = FilmeMapper.map_filmes(items)
-
-    total_pages = data.get("total_pages", 0)
-    total_results = data.get("total_results", 0)
+def listar_filmes_populares(
+    filme_service: FilmeServiceDep,
+    paginacao: TmdbPaginationParams = Depends(),
+):
+    filmes, total_pages, total_results = filme_service.list_filmes_populares(
+        page=paginacao.page,
+    )
 
     return TmdbPage(
         data=filmes,
@@ -94,20 +74,13 @@ def listar_filmes_populares(paginacao: TmdbPaginationParams = Depends()):
 
 
 @filmes_router.get("/em-breve", response_model=TmdbPage[FilmeListRead])
-def listar_filmes_em_breve(paginacao: TmdbPaginationParams = Depends()):
-    url = TMDB_API_URL + "/movie/upcoming"
-
-    params = PARAMS_TMDB.copy()
-    params["page"] = paginacao.page
-
-    data = get_data(url, params, HEADERS_TMDB)
-
-    items = data.get("results", [])
-    filmes = FilmeMapper.map_filmes(items)
-
-
-    total_pages = data.get("total_pages", 0)
-    total_results = data.get("total_results", 0)
+def listar_filmes_em_breve(
+    filme_service: FilmeServiceDep,
+    paginacao: TmdbPaginationParams = Depends(),
+):
+    filmes, total_pages, total_results = filme_service.list_filmes_em_breve(
+        page=paginacao.page,
+    )
 
     return TmdbPage(
         data=filmes,
@@ -120,11 +93,58 @@ def listar_filmes_em_breve(paginacao: TmdbPaginationParams = Depends()):
     )
 
 
-@filmes_router.get("/{filme_id}", response_model=FilmeRead)
-def buscar_filme_id(filme_id: int):
-    url = TMDB_API_URL + f"/movie/{filme_id}"
-    data = get_data(url, PARAMS_TMDB, HEADERS_TMDB)
+@filmes_router.get("/favoritos", response_model=list[FilmeFavoritoRead])
+def listar_filmes_favoritos(
+    current_user: CurrentUsuarioDep,
+    favorito_service: FavoritoServiceDep,
+):
+    return favorito_service.list_favoritos_filme(current_user.id)
 
-    if data.get("success") is False:
-        raise NotFoundException("Filme", filme_id)
-    return FilmeMapper.map_filme(data)
+
+@filmes_router.get("/assistidos", response_model=list[FilmeAssistidoRead])
+def listar_filmes_assistidos(
+    current_user: CurrentUsuarioDep,
+    assistido_service: AssistidoServiceDep,
+):
+    return assistido_service.list_assistidos_filme(current_user.id)
+
+
+@filmes_router.get("/{filme_id}", response_model=FilmeRead)
+def buscar_filme_id(filme_id: int, filme_service: FilmeServiceDep):
+    return filme_service.get_filme(filme_id=filme_id)
+
+
+@filmes_router.post("/{filme_id}/favoritos", status_code=status.HTTP_204_NO_CONTENT)
+def adicionar_filme_aos_favoritos(
+    filme_id: int,
+    current_user: CurrentUsuarioDep,
+    favorito_service: FavoritoServiceDep,
+):
+    favorito_service.add_favorito_filme(filme_id, current_user.id)
+
+
+@filmes_router.post("/{filme_id}/assistidos", status_code=status.HTTP_204_NO_CONTENT)
+def adicionar_filme_aos_assistidos(
+    filme_id: int,
+    current_user: CurrentUsuarioDep,
+    assistido_service: AssistidoServiceDep,
+):
+    assistido_service.add_assistido_filme(filme_id, current_user.id)
+
+
+@filmes_router.delete("/{filme_id}/favoritos", status_code=status.HTTP_204_NO_CONTENT)
+def remover_filme_dos_favoritos(
+    filme_id: int,
+    current_user: CurrentUsuarioDep,
+    favorito_service: FavoritoServiceDep,
+):
+    favorito_service.remove_favorito_filme(filme_id, current_user.id)
+
+
+@filmes_router.delete("/{filme_id}/assistidos", status_code=status.HTTP_204_NO_CONTENT)
+def remover_filme_dos_assistidos(
+    filme_id: int,
+    current_user: CurrentUsuarioDep,
+    assistido_service: AssistidoServiceDep,
+):
+    assistido_service.remove_assistido_filme(filme_id, current_user.id)

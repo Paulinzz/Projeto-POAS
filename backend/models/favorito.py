@@ -1,5 +1,5 @@
 from typing import TYPE_CHECKING
-from sqlalchemy import BigInteger, DateTime, ForeignKey
+from sqlalchemy import BigInteger, DateTime, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import mapped_column, Mapped, relationship
 from datetime import datetime
 
@@ -12,8 +12,24 @@ if TYPE_CHECKING:
 
 
 class Favorito(Base):
-    __tablename__ = "favorito"
+    """Representa um conteudo favorito de um usuario.
 
+    Args:
+        id: Identificador unico gerado automaticamente.
+        conteudo_id: Identificador do conteudo favoritado.
+        usuario_id: Identificador do usuario que favoritou o conteudo.
+        data_adicao: Data e hora em que o favorito foi criado.
+        conteudo: Relacionamento com o conteudo favoritado.
+        usuario: Relacionamento com o usuario dono do favorito.
+    """
+
+    __tablename__ = "favorito"
+    __table_args__ = (
+        UniqueConstraint(
+            "conteudo_id", "usuario_id", name="uq_conteudo_id_usuario_id"
+        ),
+    )  # equivalente a UNIQUE (conteudo_id, usuario_id)
+    
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     conteudo_id: Mapped[int] = mapped_column(ForeignKey("conteudo.id"), nullable=False)
     usuario_id: Mapped[int] = mapped_column(ForeignKey("usuario.id"), nullable=False)
